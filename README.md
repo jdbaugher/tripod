@@ -85,7 +85,7 @@ and R version 2.14.1.
 
   The genotypes must be AA, AB, BB, NC (or NoCall).  
 	triPOD has been developed using genotypes annotated by the Illumina method 
-  described in ["TOP/BOT" Strand and "A/B" Allele.](www.illumina.com/documents/products/technotes/technote_topbot.pdf) 
+  described in ["TOP/BOT" Strand and "A/B" Allele.](http://www.illumina.com/documents/products/technotes/technote_topbot.pdf) 
   If converting from HapMap format (ATCG) to Illumina format (AB), 
   use simple replacement as follows: 
     
