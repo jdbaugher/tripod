@@ -1,3 +1,6 @@
+triPOD
+======
+
 This software program detects chromosomal abnormalities in parent-child
 trio-based microarray data. It has been shown to provide improved 
 sensitivity for abnormality detection, with substantial improvement in 
