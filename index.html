@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>triPOD by jdbaugher</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>triPOD</h1>
+          <h2>Detect chromosomal abnormalities in parent-child trio-based microarray data.</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/jdbaugher/tripod/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/jdbaugher/tripod/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/jdbaugher/tripod" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a name="tripod" class="anchor" href="#tripod"><span class="octicon octicon-link"></span></a>triPOD</h1>
+
+<p>This software program detects chromosomal abnormalities in parent-child
+trio-based microarray data. It has been shown to provide improved 
+sensitivity for abnormality detection, with substantial improvement in 
+detection of low-level mosaic abnormalities, as described in 
+<a href="http://www.biomedcentral.com/1471-2164/14/367/">Baugher JD, et al. Sensitive and specific detection of mosaic chromosomal abnormalities using the Parent-of-Origin-based Detection (POD) method. BMC Genomics 2013.</a></p>
+
+<h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<p>triPOD is designed for use on Unix-based operating systems.  It was
+developed and tested on Red Hat Enterprise Linux 6 using Perl v5.10.1
+and R version 2.14.1.</p>
+
+<h4>
+<a name="perl-modules" class="anchor" href="#perl-modules"><span class="octicon octicon-link"></span></a>Perl modules:</h4>
+
+<pre><code>Algorithm::Cluster
+threads
+Tree::Interval
+</code></pre>
+
+<h4>
+<a name="r-libraries" class="anchor" href="#r-libraries"><span class="octicon octicon-link"></span></a>R libraries:</h4>
+
+<pre><code>shape
+TTR
+</code></pre>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<pre><code>perl triPOD.pl [--options] [INPUT_FILE]
+
+Optional Arguments:
+    --alpha   A threshold for which a p-value &lt;= alpha is considered significant.  
+              Default = --alpha=0.1
+    --batch   Submit a file containing a list of file names to be run sequentially.
+    --build   The path to a file containing the UCSC Genome assembly for centromere locations           
+              Default = --build=./genome_build/hg18_centromeres.txt
+    --cores   Number of CPU cores to employ 
+              Default = maximum cores - 1 (e.g. --cores=8)
+    --gender  Gender designation for sample (M or F). 
+              Currently, chromosome X is analyzed only if a female gender is specified.
+              Default = NA
+    --graph   Creates graphic output of results in PNG or PDF format 
+              (--graph=none, --graph=png, --graph=pdf, or --graph=both)
+              Default = --graph=none
+    --hd      Abnormality detection by homozygous deletion analysis (PODhd) (--hd or --nohd) 
+              Default = --hd
+    --help    Prints a help message describing optional parameters and input formatting
+    --hetSD   Heterozygous SNP threshold as standard deviations from mean BAF
+              Default = --hetSD=1.414213562373095 (sqrt of 2)
+    --homSD   Homozygous SNP threshold as standard deviations from mean BAF 
+              Default = --homSD=4
+    --mi1     Abnormality detection by Mendelian "error" analysis (PODmi1) (--mi1 or --nomi1) 
+              Default = --mi1
+    --nc      Samples must have a No Call rate below this threshold to be analyzed. 
+              Default = --nc=0.03
+    --out     Specify an output directory (e.g. --out=results) 
+              Default = --out=triPOD_Results
+    --pod     Abnormality detection by standard POD algorithm (--pod or --nopod) 
+              Default = --pod
+    --podcr   Abnormality detection by cryptic POD algorithm (PODcr) (--podcr or --nopodcr) 
+              Default = --podcr
+    --stats   Create a file including calculated parameters, etc. (--stats) 
+              Not created by default.
+    --verbose Prints progress info to screen. Negated using --noverbose. 
+              Default = --verbose.  Note that --batch mode will run in --noverbose mode.
+    --win     Number of SNPs per window for sliding window analysis
+              Default = --win=100
+</code></pre>
+
+<p><strong>Note</strong> </p>
+
+<ul>
+<li>It is highly recommended that parameters such as --alpha, --hetSD, --homSD,
+and --win are altered only be experienced users.</li>
+</ul><h2>
+<a name="input-formatting" class="anchor" href="#input-formatting"><span class="octicon octicon-link"></span></a>Input Formatting</h2>
+
+<p>The input file must be <strong>tab delimited</strong>, <strong>sorted</strong> by <em>chromosome</em> and 
+  <em>position</em>, and in the following order (columns): </p>
+
+<pre><code>SNP_Name  Chromosome  Position  Father.GType  Father.BAF  Father.LRR  Mother.GType  Mother.BAF  Mother.LRR
+  Child.GType Child.BAF Child.LRR
+</code></pre>
+
+<p>A header line is expected and is used to extract sample names 
+  (i.e. Sample1.GType = Sample1), but not to determine column identity.</p>
+
+<p><strong>Genotype Annotation</strong></p>
+
+<p>The genotypes must be AA, AB, BB, NC (or NoCall).<br>
+    triPOD has been developed using genotypes annotated by the Illumina method 
+  described in <a href="www.illumina.com/documents/products/technotes/technote_topbot.pdf">"TOP/BOT" Strand and "A/B" Allele.</a> 
+  If converting from HapMap format (ATCG) to Illumina format (AB), 
+  use simple replacement as follows: </p>
+
+<pre><code>AA = AA, TT; BB = CC, GG; AB = AC, AG, TC, TG; -- = NC. 
+</code></pre>
+
+<p>Any markers with alternative genotyping combinations (e.g. CG or TA) should 
+  be discarded unless the user performs an additional analysis of the 
+  surrounding sequence.</p>
+
+<p>B allele frequencies must be &gt;= 0 and &lt;= 1 for polymorphic markers. </p>
+
+<h2>
+<a name="output" class="anchor" href="#output"><span class="octicon octicon-link"></span></a>Output</h2>
+
+<p>Several types of output are produced by triPOD.</p>
+
+<ul>
+<li>
+<p>*triPOD_Results.txt</p>
+
+<p>A tabular listing of detected abnormalities including the following information:
+  Sample Name, Chromosome, Abnormal region start position, Abnormal
+  region end position, Type of Abnormality, Parental Origin,
+  Inheritance Pattern, Size of abnormal region (SNPs), Number of
+  Informative SNPs, Size of abnormal region (bps), Detection
+  Method, 
+Descriptive statistics for the abnormal region: 
+  Child's normalized median mirrored BAF (mBAF) and LRR, 
+  Father's normalized median mirrored BAF (mBAF) and LRR,
+  Mother's normalized median mirrored BAF (mBAF) and LRR.</p>
+
+<p>The results file also provides the date and time, triPOD version, 
+the command line information, and the parameters employed.</p>
+</li>
+<li>
+<p>*triPOD_Results.bed</p>
+
+<p>A .bed file is provided for visualization with genome browsers.  </p>
+</li>
+<li>
+<p>*triPOD_stats.txt</p>
+
+<p>An optional file which contains sample-specific calculations and
+parameters.  See <a href="http://www.biomedcentral.com/1471-2164/14/367/">Baugher JD, et al.</a> 
+for explanations of rate and probability calculations. The 
+following information is included for each trio: 
+file name, trio member names, NoCall rates, 
+nonadjacent homozygous deletion (HD) and single
+Mendelian error (MI1) rates, minimum region sizes, calculated
+MI1 BAF thresholds, initial and corrected alpha values for FDR
+control, estimated error rate, acceptable errors for POD
+region extension, global BAF thresholds for detecting
+informative SNPs, counts of regions detected by each detection
+method.  </p>
+</li>
+<li>
+<p>./log_files/*triPOD_log.txt </p>
+
+<p>STDERR is redirected to a log file.  </p>
+</li>
+<li>
+<p>*.png and/or *.pdf</p>
+
+<p>Optional graphical output is generated for each chromosome 
+harboring an abnormality. The upper panel is a plot of the log 
+R ratio (LRR) values with the LRR moving average plotted in green
+and a black horizontal line at y=0 to assist with visualization of
+copy number changes. The center panel is a plot of the B allele 
+frequency (BAF), in which abnormalities can frequently be 
+visualized as splitting of the heterozygous (center) BAF band. The 
+lower panel is a plot of the abnormalities detected by triPOD. 
+Abnormalities with known parental origin or contribution are 
+plotted adjacent to the Father and Mother axis labels. 
+Abnormalities with unknown contribution or abnormal contribution 
+from both parents are plotted along the y=0.5 axis, between the 
+Father and Mother labels. The types of abnormalities are color 
+coded as follows: red = deletion, blue = amplification, gray = 
+homozygous deletion, purple = uniparental heterodisomy, green = 
+uniparental isodisomy, and black = all other abnormalities for 
+which a type cannot be assigned (including low-level mosaic 
+events of all types). </p>
+</li>
+</ul><h3>
+<a name="additional-considerations" class="anchor" href="#additional-considerations"><span class="octicon octicon-link"></span></a>Additional Considerations</h3>
+
+<ul>
+<li><p>Care should be taken when interpreting large abnormalities in 
+commonly variable regions due to a tendency to combine small 
+adjacent abnormalities of the same type.</p></li>
+<li><p>Interesting findings should be graphically investigated until 
+the user has gained expertise with the strengths and weaknesses 
+of the various detection and annotation methods employed by triPOD. </p></li>
+</ul>
+        </section>
+
+        <footer>
+          triPOD is maintained by <a href="https://github.com/jdbaugher">jdbaugher</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
