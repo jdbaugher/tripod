@@ -170,3 +170,7 @@ Several types of output are produced by triPOD.
   - Interesting findings should be graphically investigated until 
   the user has gained expertise with the strengths and weaknesses 
   of the various detection and annotation methods employed by triPOD. 
+
+## Author
+
+Joseph D. Baugher, Ph.D.  -  jbaughe2(at)jhmi.edu
