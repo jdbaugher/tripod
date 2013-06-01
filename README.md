@@ -174,3 +174,5 @@ Several types of output are produced by triPOD.
 ## Author
 
 Joseph D. Baugher, Ph.D.  -  jbaughe2(at)jhmi.edu
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/5e83d6fdc99b13a0d474dc9492bf487d "githalytics.com")](http://githalytics.com/jdbaugher/tripod)
