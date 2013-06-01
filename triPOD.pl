@@ -2474,15 +2474,16 @@ sub help {
 Usage: perl $0 [--options] [INPUT_FILE]
   --alpha   A threshold for which a p-value <= alpha is considered significant.
             Default = --alpha=0.1
-  --batch   Submit a file containing a list of file names to be run sequentially
+  --batch   Submit a file containing a list of file names to be analyzed
   --build   The path to a file containing the UCSC Genome assembly 
             for centromere locations.
             Default = --build=./genome_build/hg18_centromeres.txt
-  --cite    Prints publication info for citations
+  --cite    Prints reference info for citations
   --cores   Number of CPU cores to employ
             Default = maximum cores - 1 (e.g. --cores=8)
-  --gender  Gender designation for sample (M or F)
-            Default = NA
+  --gender  Gender designation for sample (M or F) (--gender=F)
+            Currently, chromosome X is analyzed only if a female gender is 
+            specified. Default = NA
   --graph   Creates graphic output of results in PNG or PDF format
             (--graph=none, --graph=png, --graph=pdf, or --graph=both)
             Default = --graph=none
