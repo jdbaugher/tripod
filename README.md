@@ -24,42 +24,46 @@ and R version 2.14.1.
     perl triPOD.pl [--options] [INPUT_FILE]
 
     Optional Arguments:
-	--alpha   The threshold under which the familywise error rate is controlled.  
-                  Default = --alpha=0.1
-	--batch   Submit a file containing a list of file names to be run sequentially.
-	--build   The path to a file containing the UCSC Genome assembly for centromere locations  			
-                  Default = --build=./genome_build/hg18_centromeres.txt
-	--cores   Number of CPU cores to employ 
-                  Default = maximum cores - 1 (e.g. --cores=8)
-	--gender  Gender designation for sample (M or F). 
-                  Currently, chromosome X is analyzed only if a female gender is specified.
-                  Default = NA
-	--graph   Creates graphic output of results in PNG or PDF format 
-                  (--graph=none, --graph=png, --graph=pdf, or --graph=both)
-                  Default = --graph=none
-	--hd      Abnormality detection by homozygous deletion analysis (PODhd) (--hd or --nohd) 
-                  Default = --hd
-	--help    Prints a help message describing optional parameters and input formatting
-	--hetSD   Heterozygous SNP threshold as standard deviations from mean BAF
-                  Default = --hetSD=1.414213562373095 (sqrt of 2)
-	--homSD   Homozygous SNP threshold as standard deviations from mean BAF 
-                  Default = --homSD=4
-	--mi1     Abnormality detection by Mendelian "error" analysis (PODmi1) (--mi1 or --nomi1) 
-                  Default = --mi1
-	--nc      Samples must have a No Call rate below this threshold to be analyzed. 
-                  Default = --nc=0.03
-	--out     Specify an output directory (e.g. --out=results) 
-                  Default = --out=triPOD_Results
-	--pod     Abnormality detection by standard POD algorithm (--pod or --nopod) 
-                  Default = --pod
-	--podcr   Abnormality detection by cryptic POD algorithm (PODcr) (--podcr or --nopodcr) 
-                  Default = --podcr
-	--stats   Create a file including calculated parameters, etc. (--stats) 
-                  Not created by default.
-	--verbose Prints progress info to screen. Negated using --noverbose. 
-                  Default = --verbose.	Note that --batch mode will run in --noverbose mode.
-	--win     Number of SNPs per window for sliding window analysis
-                  Default = --win=100
+      --alpha   The threshold under which the familywise error rate is 
+                controlled. Default = --alpha=0.1
+      --batch   Submit a file containing a list of file names to be run 
+                sequentially.
+      --build   The path to a file containing centromere locations from
+                the appropriate UCSC assembly.
+                Default = --build=./genome_build/hg18_centromeres.txt
+      --cite    Prints reference info for citations
+      --cores   Number of CPU cores to employ 
+                Default = maximum cores - 1 (e.g. --cores=8)
+      --gender  Gender designation for sample (M or F). 
+                Currently, chromosome X is analyzed only if a female 
+                gender is specified. Default = NA
+      --graph   Creates graphic output of results in PNG or PDF format 
+                (--graph=none, --graph=png, --graph=pdf, or --graph=both)
+                Default = --graph=none
+      --hd      Abnormality detection by homozygous deletion analysis (PODhd)
+                (--hd or --nohd). Default = --hd
+      --help    Prints a message describing optional arguments and formatting
+      --hetSD   Heterozygous SNP threshold as standard deviations from mean BAF
+                Default = --hetSD=1.414213562373095 (sqrt of 2)
+      --homSD   Homozygous SNP threshold as standard deviations from mean BAF 
+                Default = --homSD=4
+      --mi1     Abnormality detection by Mendelian "error" analysis (PODmi1) 
+                (--mi1 or --nomi1). Default = --mi1
+      --nc      Samples must have a No Call rate below this threshold to be 
+                analyzed. Default = --nc=0.03
+      --out     Specify an output directory (e.g. --out=results) 
+                Default = --out=triPOD_Results
+      --pod     Abnormality detection by standard POD algorithm 
+                (--pod or --nopod). Default = --pod
+      --podcr   Abnormality detection by cryptic POD algorithm (PODcr) 
+                (--podcr or --nopodcr). Default = --podcr
+      --stats   Create a file including calculated parameters, etc. (--stats) 
+                Not created by default.
+      --verbose Prints progress info to screen. Negated using --noverbose. 
+                Default = --verbose. 
+                Note that --batch mode will run in --noverbose mode.
+      --win     Number of SNPs per window for sliding window analysis
+                Default = --win=100
 
 **Note** 
 
