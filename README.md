@@ -24,7 +24,7 @@ and R version 2.14.1.
     perl triPOD.pl [--options] [INPUT_FILE]
 
     Optional Arguments:
-	    --alpha   A threshold for which a p-value <= alpha is considered significant.  
+	    --alpha   The threshold under which the familywise error rate is controlled.  
                   Default = --alpha=0.1
 	    --batch   Submit a file containing a list of file names to be run sequentially.
     	--build   The path to a file containing the UCSC Genome assembly for centromere locations  			
