@@ -1,20 +1,25 @@
 #!/usr/bin/perl
- 
-#triPOD - detection of chromosomal abnormalities using parent-of-origin-based analyses.
-#triPOD was designed and implemented by Joseph D. Baugher. Email:jbaughe2(at)jhmi.edu.
-#This file is part of triPOD.
-#triPOD is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
 
-#triPOD is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
-
-#You should have received a copy of the GNU General Public License
-#along with triPOD.  If not, see <http://www.gnu.org/licenses/>.
+############################################################################### 
+#
+# The triPOD software detects chromosomal abnormalities using 
+# the Parent-of-Origin-based Detection (POD) method.
+# Author and maintainer: Joseph D. Baugher. 
+# Email:jbaughe2(at)jhmi.edu.
+#
+# This file is part of the triPOD software.
+# triPOD is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+#	(at your option) any later version.
+# triPOD is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+#   along with triPOD.  If not, see <http://www.gnu.org/licenses/>.
+#
+###############################################################################
 
 use strict;
 use warnings;
@@ -27,10 +32,19 @@ use POSIX qw(ceil floor);
 use threads;
 use Time::HiRes 'usleep';
 use Tree::Interval;
+use Version_info;
 
+my $version_info = Version_info->new();
+print "\n", $version_info->get_name, " ", $version_info->get_version, "\n\n";
 my $CMD_LINE = join(" ", $0, @ARGV);
+
 # Detect the total number of cores
-my $MAX_CORES = `cat /proc/cpuinfo | grep processor | wc -l`;
+my $MAX_CORES = 1;
+my $os = $^O;
+if ($os =~ /mswin/i){warn("triPOD has not been tested on Windows!")}
+elsif($os =~ /darwin/i){$MAX_CORES= `sysctl -n hw.ncpu`}
+elsif($os =~ /linux/i){$MAX_CORES= `cat /proc/cpuinfo | grep processor | wc -l`}
+
 my $THE_TIME = cpu_time();
 
 # Get process ID, current working directory, and current time
@@ -41,6 +55,7 @@ my $PID_VALUE = $$;
 my $ALPHA       = 0.1;
 my $BATCH;
 my $BUILD_FILE  = "./genome_build/hg18_centromeres.txt";
+my $CITE;
 my $CORES       = $MAX_CORES - 1;
 my $GENDER      = 0;
 my $GRAPHICS    = "none";
@@ -64,18 +79,20 @@ my $STATS;
 my $verbose     = "T";
 
 # Get optional input parameters (e.g. --cores=2 --alpha=0.05)
-GetOptions( 'alpha=f'  => \$ALPHA,              'hetSD=f'  => \$HET_SD,
-            'batch=s'  => \$BATCH,              'homSD=f'  => \$HOM_SD,
-            'win=i'    => \$SIZE_SMALL_WINDOW,  'mi1!'     => \$MI1,
-            'build=s'  => \$BUILD_FILE,         'nc=f'     => \$NC_THRESH,
-            'cores=i'  => \$CORES,              'out=s'    => \$OUTPUT_DIR,
-            'gender=s' => \$GENDER,             'pod!'     => \$POD,
-            'graph=s'  => \$GRAPHICS,           'podcr!'   => \$PODcr,
-            'hd!'      => \$HD,                 'stats!'   => \$STATS,
-            'help!'    => \$HELP,               'verbose!' => \$verbose     
+GetOptions( 'alpha=f'  => \$ALPHA,            'homSD=f'  => \$HOM_SD,
+            'batch=s'  => \$BATCH,            'mi1!'     => \$MI1,
+            'build=s'  => \$BUILD_FILE,       'nc=f'     => \$NC_THRESH,
+            'cite!'    => \$CITE,             'out=s'    => \$OUTPUT_DIR,
+            'cores=i'  => \$CORES,            'pod!'     => \$POD,
+            'gender=s' => \$GENDER,           'podcr!'   => \$PODcr,
+            'graph=s'  => \$GRAPHICS,         'stats!'   => \$STATS,
+            'hd!'      => \$HD,               'verbose!' => \$verbose,
+            'help!'    => \$HELP,             'win=i'    => \$SIZE_SMALL_WINDOW,
+            'hetSD=f'  => \$HET_SD                
           );
 
 help() if $HELP;
+if ($CITE) {print $version_info->get_reference, "\n\n"; exit 0} 
 my $SIZE_LARGE_WINDOW = $SIZE_SMALL_WINDOW * 5;
 my $CORES_PER_SAMPLE = $CORES;
 my $AMP = 0.1;
@@ -227,8 +244,11 @@ my $OUTPUT_FILE;
 if ($BATCH){$OUTPUT_FILE = "$OUTPUT_DIR/$input_name\_triPOD_Batch_Results.txt"}
 else {$OUTPUT_FILE = "$OUTPUT_DIR/$input_name\_triPOD_Results.txt"}
 open(OUTPUT_FILE, '>', $OUTPUT_FILE) || die 
-    "Could not create output file - $OUTPUT_FILE!\n"; 
-print OUTPUT_FILE join("\n", $THE_TIME, $CMD_LINE), "\n\n";
+    "Could not create output file - $OUTPUT_FILE!\n";
+print OUTPUT_FILE join("\n", $THE_TIME, $CMD_LINE), "\n";
+print OUTPUT_FILE $version_info->get_name, "\t", $version_info->get_version,
+	"\tAuthor: ", $version_info->get_author, "\t", 
+	$version_info->get_author_email, "\n\n"; 
 if ($BATCH) {
     print OUTPUT_FILE "Detected Chromosomal Abnormalities", "\n",
         join("\t", qw(Sample Chr Start Stop Type Parent_of_Origin 
@@ -2010,7 +2030,7 @@ sub detect_hom_del {
 sub determine_R_status {
     # Determines if the R script is still running and makes one attempt to 
     # restart the Rscript.
-    my $R_status = `ps --no-heading -p $R_PID`;
+    my $R_status = `ps -p $R_PID -o pid=`;
     if (!$R_status && !$R_ATTEMPTS) { 
         if (!$R_ATTEMPTS) {
             $R_ATTEMPTS++;
@@ -2458,6 +2478,7 @@ Usage: perl $0 [--options] [INPUT_FILE]
   --build   The path to a file containing the UCSC Genome assembly 
             for centromere locations.
             Default = --build=./genome_build/hg18_centromeres.txt
+  --cite    Prints publication info for citations
   --cores   Number of CPU cores to employ
             Default = maximum cores - 1 (e.g. --cores=8)
   --gender  Gender designation for sample (M or F)
@@ -2490,7 +2511,6 @@ Usage: perl $0 [--options] [INPUT_FILE]
   --win     Number of SNPs per window for sliding window analysis
             Default = --win=100
 
-  
 END
     print_proper_format();
     exit 0;
@@ -3101,9 +3121,9 @@ sub print_proper_format {
     print <<END;
     
 The input file must be tab delimited, sorted by chromosome and position, 
-and in the following order: SNP Name, Chromosome, Position, 
-Father GType, Father BAF, Father LRR, Mother GType, Mother BAF, Mother LRR, 
-Child GType, Child BAF, Child LRR.
+  and in the following order: SNP Name, Chromosome, Position, 
+  Father GType, Father BAF, Father LRR, Mother GType, Mother BAF, Mother LRR, 
+  Child GType, Child BAF, Child LRR.
 The genotypes must be AA, AB, BB, NC or NoCall.
 B allele frequencies must be >= 0 and <= 1 for polymorphic markers.
 A header line is expected but is not used to determine column identity.
