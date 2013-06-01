@@ -4,8 +4,8 @@ triPOD
 This software program detects chromosomal abnormalities in parent-child
 trio-based microarray data. It has been shown to provide improved 
 sensitivity for abnormality detection, with substantial improvement in 
-detection of low-level mosaic abnormalities, as described in 
-[Baugher JD, et al. Sensitive and specific detection of mosaic chromosomal abnormalities using the Parent-of-Origin-based Detection (POD) method. BMC Genomics 2013.](http://www.biomedcentral.com/1471-2164/14/367/)
+detection of low-level mosaic abnormalities, as described by 
+[Joseph D. Baugher, Benjamin D. Baugher, Matthew D. Shirley, and Jonathan Pevsner. Sensitive and specific detection of mosaic chromosomal abnormalities using the Parent-of-Origin-based Detection (POD) method. BMC Genomics 2013.](http://www.biomedcentral.com/1471-2164/14/367/)
 
 ## Requirements
 triPOD is designed for use on Unix-based operating systems.  It was
