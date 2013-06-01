@@ -1,0 +1,24 @@
+##############################################################################  
+#
+# General information for the triPOD software.
+#
+##############################################################################    
+
+triPOD version 1.0
+Author:   Joseph D Baugher
+Author Email: 	jbaughe2(at)jhmi.edu
+
+reference:	Baugher JD, Baugher BD, Shirley MD, Pevsner J.
+		Sensitive and specific detection of mosaic chromosomal 
+		abnormalities using the Parent-of-Origin-based Detection 
+		(POD) method. BMC Genomics. 2013 May 31; 14:367.
+		doi:10.1186/1471-2164-14-367.
+
+url: 		https://github.com/jdbaugher/tripod
+download url: 	git://github.com/jdbaugher/tripod.git
+github page:	http://jdbaugher.github.io/tripod
+
+webapp url:	http://pevsnerlab.kennedykrieger.org/tripod
+
+
+
