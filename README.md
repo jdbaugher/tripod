@@ -64,7 +64,7 @@ and R version 2.14.1.
 **Note** 
 
   - It is highly recommended that parameters such as --alpha, --hetSD, --homSD,
-  and --win are altered only be experienced users.
+  and --win are altered only by experienced users.
 
 ## Input Formatting
 
