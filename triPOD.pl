@@ -26,7 +26,7 @@ use warnings;
 use Algorithm::Cluster 'kcluster';
 use Cwd 'getcwd';
 use File::Path qw(make_path remove_tree);
-use File::Temp qw(tempfile tempdir);
+use File::Temp 'tempfile';
 use Getopt::Long;
 use POSIX qw(ceil floor);
 use threads;
@@ -49,7 +49,6 @@ my $THE_TIME = cpu_time();
 
 # Get process ID, current working directory, and current time
 my $CWD = getcwd();
-my $PID_VALUE = $$;
 
 # Default Parameters
 my $ALPHA       = 0.1;
@@ -295,8 +294,7 @@ my ($AA_BOUND, $AB_LOWER_BOUND, $AB_UPPER_BOUND, $ACCEPTABLE_ERRORS,
     $MIN_P2_HD, $MIN_POD, $P1_AA_BOUND, $P1_BB_BOUND, $P2_AA_BOUND,$P2_BB_BOUND,
     $P1_LRR_MED, $P1_mBAF_MED, $P1_NAME, $P2_LRR_MED, $P2_mBAF_MED, $P2_NAME,
     $PERL_TO_R_FILE, $PERL_TO_R_FILENAME, $POD_ALPHA, $PODCR_LOWER_THRESH, 
-    $PODCR_UPPER_THRESH, $R_ATTEMPTS, $R_PID, $R_PID_FILE, $R_PID_FILENAME, 
-    $R_TO_PERL_FILE, $R_TO_PERL_FILENAME, $REFINING);
+    $PODCR_UPPER_THRESH, $REFINING);
 my (@BAF_OUTLIERS, @CURR_CHR_REFS, @LRR_REFS, @P1_INF_SNPS, @P2_INF_SNPS);
 my (%BAF_BY_POS, %BAF_OUTLIERS_BY_POS, %CH_HD_BY_POS, %LRR_BY_POS, %MI1_BY_POS,  
     %P1_HD_BY_POS, %P1_INF_SNP_BY_POS, %P2_HD_BY_POS, %P2_INF_SNP_BY_POS, 
@@ -472,15 +470,6 @@ sub main_program {
     $P1_NAME = (split(/[.]/, (split(/\t/, $HEADERS))[3]))[0];
     $P2_NAME = (split(/[.]/, (split(/\t/, $HEADERS))[6]))[0];
     $CH_NAME = (split(/[.]/, (split(/\t/, $HEADERS))[9]))[0];
-
-    # Create temp files for communication with R and call Rscript    
-    if ($GRAPHICS) {
-        ($R_PID_FILE, $R_PID_FILENAME)         = tempfile(UNLINK => 1);
-        ($R_TO_PERL_FILE, $R_TO_PERL_FILENAME) = tempfile(UNLINK => 1);
-        ($PERL_TO_R_FILE, $PERL_TO_R_FILENAME) = tempfile(UNLINK => 1);
-        start_R();
-        $R_ATTEMPTS = 0;
-    }
     
     # Initial Calculations
     print "Performing Initial Calculations...\n\n" if $verbose;
@@ -709,22 +698,6 @@ sub main_program {
         }
         $errors++;
     }
-
-    if ($GRAPHICS) { 
-        # Open file from R containing the current R PID
-        get_R_PID();
-
-        # Check if the R script is still running
-        until(determine_R_status()) {
-            if ($R_ATTEMPTS > 1) {
-                print "A fatal error has occurred in communication with the R",
-                    " software.\n" if $verbose;
-                print STDERR "ERROR: A fatal error has occurred in ",
-                    "communication with the R software.\n";  
-                return();
-            }        
-        }
-    }
     
     ################################## Analysis ################################
     my $analysis_results = parse_file($INPUT_FILE, \&manage_chromosome_arm,
@@ -840,7 +813,8 @@ sub main_program {
         "Child  =   $CH_NAME\t$ch_nc_rate") unless ($BATCH);        
             
     ############## Create file to pass results to R script ##################
-    if ($GRAPHICS) { 
+    if ($GRAPHICS) {
+        ($PERL_TO_R_FILE, $PERL_TO_R_FILENAME) = tempfile(UNLINK => 1);     
         print $PERL_TO_R_FILE "Chr\tStart\tStop\tType\tParent\tSNPs",
             "\tInformative SNPs\tSize of Region (bp)\tRadius of region for R",
             "\tbp of midpoint for R\tMedian BAF\tMedian LRR\tFather-Median ",
@@ -848,35 +822,9 @@ sub main_program {
 
         map {print $PERL_TO_R_FILE join("\t", @{$_}[0..15]), "\n"} 
             @sorted_detected_regions;
-        print "Creating Graphics\n" if $verbose;
+        print "Creating Graphics ...\n" if $verbose;
         
-        until(determine_R_status()) {
-            if ($R_ATTEMPTS > 1) {
-                print "A fatal error has occurred in communication with the R",
-                    " software.\n" if $verbose;
-                print STDERR "ERROR: A fatal error has occurred in ",
-                    "communication with the R software.\n";  
-                return();
-            }        
-        }
-        
-        # Wait for R script to finish and return results
-        my $waiting_for_R = 0;
-        until ($waiting_for_R) {
-            if (-s $R_TO_PERL_FILENAME) {$waiting_for_R = 1}
-            else {
-                until(determine_R_status()) {
-                    if ($R_ATTEMPTS > 1) {
-                        print "A fatal error has occurred in communication ",
-                            "with the R software.\n" if $verbose;
-                        print STDERR "A fatal error has occurred in ",
-                            "communication with the R software.\n";  
-                        return();
-                    }        
-                }
-                usleep(500000);
-            }
-        }
+        start_R();
     }  
     map{$$_[4] = "NA" if $$_[4] eq " "} @output;
     map{$$_[6] = "NA" if $$_[6] eq " "} @output;    
@@ -1450,8 +1398,7 @@ sub clear_global_variables {
      $MIN_POD, $P1_AA_BOUND,$P1_BB_BOUND,$P2_AA_BOUND,$P2_BB_BOUND,$P1_LRR_MED, 
      $P1_mBAF_MED,$P1_NAME,$P2_LRR_MED, $P2_mBAF_MED,$P2_NAME,$PERL_TO_R_FILE, 
      $PERL_TO_R_FILENAME, $POD_ALPHA, $PODCR_LOWER_THRESH, $PODCR_UPPER_THRESH, 
-     $R_ATTEMPTS, $R_PID, $R_PID_FILE, $R_PID_FILENAME, $R_TO_PERL_FILE, 
-     $R_TO_PERL_FILENAME, $REFINING) = (0) x 56;
+     $REFINING) = (0) x 56;
 }
 
 sub cluster {
@@ -2027,22 +1974,6 @@ sub detect_hom_del {
     return(\@return_regions);
 }            
   
-sub determine_R_status {
-    # Determines if the R script is still running and makes one attempt to 
-    # restart the Rscript.
-    my $R_status = `ps -p $R_PID -o pid=`;
-    if (!$R_status && !$R_ATTEMPTS) { 
-        if (!$R_ATTEMPTS) {
-            $R_ATTEMPTS++;
-            start_R();
-            sleep(5);
-            ($R_PID_FILE, $R_PID_FILENAME) = tempfile(UNLINK => 1);
-            if(!get_R_PID()) {$R_ATTEMPTS++}
-        }            
-    }
-    return($R_status);
-} 
-
 sub evaluate_region {
     my ($region_ref, $contrib) = @_;
     my $count = 1;
@@ -2457,15 +2388,6 @@ sub find_POD_regions {
         map {calculate_region_stats($_)} @abnormal_regions;
     }
     return(\@abnormal_regions);    
-}
-
-sub get_R_PID {
-    $R_PID = <$R_PID_FILE>;
-    if (!$R_PID) {
-        print STDERR "An error has occurred in communication with the R ", 
-        "software.\n"
-    }
-    return($R_PID);
 }
 
 sub help {
@@ -3693,8 +3615,7 @@ sub start_R {
     my $r_script = join(" ", "Rscript --slave --no-save --no-restore",
         "--no-environ --silent $graphics_file",
         $OUTPUT_DIR, $INPUT_FILE, $FILENAME, $P1_NAME, 
-        $P2_NAME, $CH_NAME, $PID_VALUE, $R_PID_FILENAME,
-        $PERL_TO_R_FILENAME, $R_TO_PERL_FILENAME, $GRAPHICS, "&> /dev/null &");
+        $P2_NAME, $CH_NAME, $PERL_TO_R_FILENAME, $GRAPHICS, $verbose);        
     system($r_script);
 }
 

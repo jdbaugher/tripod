@@ -25,7 +25,7 @@
 library(shape)
 library(TTR)
 
-#Get arguments passed from Perl script
+# Get arguments passed from Perl script
 args           <- commandArgs(TRUE)
 path           <- args[1]
 input.file     <- args[2]
@@ -33,20 +33,24 @@ filename       <- args[3]
 p1.name        <- args[4]
 p2.name        <- args[5]
 child.name     <- args[6]
-perl.PID       <- args[7]
-R.PID.file     <- args[8]
-perl.to.R.file <- args[9]
-R.to.perl.file <- args[10]
-graph.output   <- args[11]
-r.PID          <- Sys.getpid()
-write(r.PID, R.PID.file)
-
-print(path)
+perl.to.R.file <- args[7]
+graph.output   <- args[8]
+verbose        <- args[9]
 
 # Read in tab delimited file of trio, format = SNP Name, chromosome,
 # position, parent1, parent1 BAF, parent1 LRR, parent2, parent2 BAF,
 # parent2 LRR, child, child BAF, child LRR
-print("reading input file")
+
+# Open data file from perl
+#if (verbose) cat("Reading abnormal regions file\n")
+abn.regions <- read.delim(file=perl.to.R.file, colClasses=c(rep("numeric", 3),
+                          rep("character",2), rep("numeric", 11)))
+colnames(abn.regions) <- c("Chr", "Start", "Stop", "Type", "Parent", "Num.SNPs",
+                           "Inf.SNPs", "Num.Bases", "Radius", "Midpoint",
+                           "Child.Mean.mBAF", "Child.Mean.LRR", "P1.Mean.mBAF",
+                           "P1.Mean.LRR", "P2.Mean.mBAF", "P2.Mean.LRR")
+
+#if (verbose) cat("Reading input file\n")
 data <- read.delim(file=input.file, header=TRUE, comment.char="",
                    colClasses=c(rep("factor", 2), "numeric", "factor",
                    rep("numeric", 2), "factor", rep("numeric", 2),
@@ -57,58 +61,23 @@ colnames(data)<-c("SNP Name", "Chr", "Pos", "P1.GType", "P1.BAF",
                   "Child.BAF", "Child.LRR")
 data <- data[grep("[YM-]", data$Chr, invert=T), ]
 data$Chr <- as.factor(sub("X", 23, data$Chr))
-print("finished reading input file")
-
-checkPID <- function(PID) {
-  x <- system(paste("ps --no-heading -p",
-               PID,
-               "|",
-               "wc -l", sep=" "),
-         intern=T)
-  return(x)
-}
-
-proceed <- function(x) {
-  wc <- system(paste("wc",
-                     x, sep=" "),
-               intern=T)
-  y <- strsplit(wc,"\\ +")[[1]][2]
-  if (y > 1) { z <- "TRUE" }
-  else z <- "FALSE"
-  return(z)
-}
-
-while (proceed(perl.to.R.file)=="FALSE") {
-  if (checkPID(perl.PID)==1) { Sys.sleep(0.5) }
-  else q(save = "no", status = 1, runLast = TRUE)
-}
-
-#Open data file from perl
-print("reading regions file")
-abn.regions <- read.delim(file=perl.to.R.file, colClasses=c(rep("numeric", 3),
-                          rep("character",2), rep("numeric", 11)))
-colnames(abn.regions) <- c("Chr", "Start", "Stop", "Type", "Parent", "Num.SNPs",
-                           "Inf.SNPs", "Num.Bases", "Radius", "Midpoint",
-                           "Child.Mean.mBAF", "Child.Mean.LRR", "P1.Mean.mBAF",
-                           "P1.Mean.LRR", "P2.Mean.mBAF", "P2.Mean.LRR")
-print("finished reading regions file")
 
 PlotAbnChr <- function(chromosome)
 {
+  if (verbose) cat("Plotting Chromosome",chromosome,"\n")
   curr.regions=abn.regions[which(abn.regions$Chr == chromosome),]
   curr.data=data[which(data$Chr == chromosome),]
 
   moving.avg <- SMA(curr.data$Child.LRR, n=50)  
   
   if (chromosome == 23) chromosome <- "X" 
-  x.label <- paste("Chromosome ",chromosome, sep="")
+  x.label <- paste("Chromosome",chromosome, sep="")
   
   if (graph.output == "png" | graph.output == "both") {
     #Create PNG plot
     png(file = paste(path, "/", child.name, "_Chr_", chromosome, 
       ".png", sep=""), width=11, height=8.5, units="in", res=300)    
-    par(mfrow=c(3,1), mar=c(0.75, 11, 5, 4),family="sans", fontface="bold", las=0)
-
+    par(mfrow=c(3,1), mar=c(0.75, 11, 5, 4),family="sans", font=2, las=0)
     plot(curr.data$Pos, curr.data$Child.LRR,
       xlab     = "", 
       ylab     = "",
@@ -200,14 +169,14 @@ PlotAbnChr <- function(chromosome)
         roundrect(mid=c(midpoint, 50),radius,4,col=color,lcol=color,lwd=0)
       }
     }
-  dev.off()  
+  dev.off() 
   }    
   
   if (graph.output == "pdf" | graph.output == "both") { 
     #Create PDF plot
     pdf(file = paste(path, "/", child.name, "_Chr_", chromosome, ".pdf", sep=""),
       width=11,height=8.5)
-    par(mfrow=c(3,1), mar=c(0.75, 11, 5, 4),family="sans", fontface="bold", las=0)
+    par(mfrow=c(3,1), mar=c(0.75, 11, 5, 4),family="sans", font=2, las=0)
 
     plot(curr.data$Pos, curr.data$Child.LRR,
       xlab     = "", 
@@ -301,12 +270,11 @@ PlotAbnChr <- function(chromosome)
       }
     }
   dev.off()  
-  }    
+  } 
 }
 abn.chr.list <- unique(abn.regions$Chr)
 abn.chr.list <- abn.chr.list[which(abn.chr.list <= 23)]
 abn.chr.list <- abn.chr.list[order(abn.chr.list)]
-sapply(abn.chr.list, PlotAbnChr)
-
-write("done", R.to.perl.file)
+tmp<-sapply(abn.chr.list, PlotAbnChr)
+cat("The graphics are complete.\n")
 q(save = "no", status = 0, runLast = TRUE)
