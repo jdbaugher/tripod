@@ -32,6 +32,8 @@ use POSIX qw(ceil floor);
 use threads;
 use Time::HiRes 'usleep';
 use Tree::Interval;
+use FindBin;
+use lib $FindBin::Bin;
 use Version_info;
 
 my $version_info = Version_info->new();
@@ -2436,7 +2438,7 @@ Usage: perl $0 [--options] [INPUT_FILE]
 
 END
     print_proper_format();
-    exit 0;
+    exit 3;
 }
 
 sub initial_calculations {
@@ -3601,7 +3603,7 @@ sub st_dev {
 }
 
 sub start_R {
-    my $graphics_file = "./triPOD_graphics.R";
+    my $graphics_file = join("/","$FindBin::Bin","triPOD_graphics.R");
     unless (-e $graphics_file) { 
         print STDERR "The file entitled $graphics_file cannot be ",
         "located.\nPlease place in the same directory as the Perl script.\n",
