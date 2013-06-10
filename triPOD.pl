@@ -151,7 +151,7 @@ my $line = <INPUT_FILE>;
 chomp($line);
 my @line =  split("\t", $line);
 close INPUT_FILE;
-if (scalar(@line) == 1 && -e $line[0] && !$BATCH) {
+if (scalar(@line) == 1 && defined($line[0]) && !$BATCH) {
     $BATCH = $check_batch; 
     print STDERR "WARNING: The input appears to be a list of files. ",
         "Switching to BATCH mode.\n";
@@ -466,6 +466,37 @@ sub main_program {
     
     # Get filename
     $FILENAME = (split(/[\/]/,(split(/.txt/, $CURR_FILE))[0]))[-1];
+	my @input_check_array;
+	while (<INPUT_FILE>) {
+        my $line = $_;
+        chomp($line);
+        my @line_array = split(/\t/, $line);
+        if (scalar(@line_array) > 100) {
+        	print "\nERROR: This Perl script is likely unable to detect the newline\n",
+        		"characters present in the input file. The program currently\n",
+        		"expects newlines in the Unix format: LF (Line feed,",
+        		" \'\\n\', 0x0A).\n\n";
+        	print STDERR "ERROR: This Perl script is likely unable to detect the ",
+        		"newline characters present in the input file. The program currently",
+        		"expects newlines in the Unix ormat: LF (Line feed,",
+        		" \'\\n\', 0x0A).\n";
+        	exit 3;	
+        }
+        if ($. > 1) {push(@input_check_array, \@line_array)} 
+        if ($. == 1000) {
+        	my $passed = check_input_format(\@input_check_array);
+        	if(!$passed) {
+        		if($BATCH) {return()}
+        		else {exit 3}
+        	}
+        }
+    } 
+    close(INPUT_FILE);     
+    if(!open(INPUT_FILE, "<", $INPUT_FILE)) { 
+        print "Could not open input file: $INPUT_FILE!\n";
+        print STDERR "ERROR: Could not open input file: $INPUT_FILE!\n";            
+        return();
+    }
 
     # Get sample names
     my $HEADERS = <INPUT_FILE>;
@@ -475,8 +506,7 @@ sub main_program {
     
     # Initial Calculations
     print "Performing Initial Calculations...\n\n" if $verbose;
-    my $init_results = parse_file($INPUT_FILE, \&initial_calculations, 
-        "check input");
+    my $init_results = parse_file($INPUT_FILE, \&initial_calculations);
     return() unless $init_results;
     my (@init_ch_stats, @init_p1_stats, @init_p2_stats);
     map {push(@init_ch_stats, $$_[0])} @$init_results;
@@ -618,9 +648,12 @@ sub main_program {
     $MIN_BAF_OUT = calc_min_adj_snps($ab_ct, $baf_outlier_rate, $ALPHA);
 
     my $next = check_quality($total_mi1_rate, $p1_nc_rate, $p2_nc_rate, 
-        $ch_nc_rate); 
-    return() if $next;
-
+        $ch_nc_rate);
+    if ($next) { 
+    	if ($BATCH) {return()}
+    	else {exit 5}
+	}
+	
     # Calculate hd rates and minimum size of hd regions
     my ($p1_hd_ct, $p2_hd_ct, $ch_hd_ct, $norm_lrr_snp_ct) = (0) x 4;                
     $p1_hd_ct        += $_ for map {$$_[5]}  @normals;
@@ -674,7 +707,8 @@ sub main_program {
                 "contribution were detected at this alpha level.\n" if $BATCH;    
             print "\n\nNo regions of abnormal parental contribution were ",
                 "detected at this alpha level.\n\n" if $verbose;
-            return([0,0,0,1]);
+            if ($BATCH) {return([0,0,0,1])}
+            else {exit 4}
         }
     }
   
@@ -731,7 +765,8 @@ sub main_program {
             "contribution were detected at this alpha level.\n" if $BATCH;    
         print "\n\nNo regions of abnormal parental contribution were ",
             "detected at this alpha level.\n\n" if $verbose;
-        return([0,0,0,1]);
+        if($BATCH) {return([0,0,0,1])}
+        else {exit 4}
     }
    
     # Sort output array by chromosome and position     
@@ -1243,9 +1278,17 @@ sub check_input_format {
     my $prev_position = 0;
     for (@$array_ref) {
         my @line_array = @$_;
+        # Check for input in last expected column
+        if (!defined($line_array[11])) {
+            print "\nSample $FILENAME : FAILED - Too few columns.\n";
+            print STDERR "ERROR: Sample $FILENAME : FAILED - Too few ",
+                "columns.\n";                    
+            print_proper_format();
+            return();
+        }
         # Check Chromosome column for anything other than acceptable
         # chromosomes
-        if ($line_array[CHR] 
+        elsif ($line_array[CHR] 
             !~ /^[1-9]$|^[1][0-9]|^[2][0-2]$|x|y|xy|m|mt/i) {
             print "\nSample $FILENAME : FAILED - Unrecognized ",
                 "character ($line_array[CHR]) in Chromosome column!\n";
@@ -1293,14 +1336,6 @@ sub check_input_format {
                 "is out of range (@line_array[4,7,10]) !\n";
             print STDERR "ERROR: Sample $FILENAME : FAILED - B allele ",
                 "frequency is out of range (@line_array[4,7,10]) !\n";                    
-            print_proper_format();
-            return();
-        }
-        # Check for input in last expected column
-        elsif (!defined($line_array[11])) {
-            print "\nSample $FILENAME : FAILED - Too few columns.\n";
-            print STDERR "ERROR: Sample $FILENAME : FAILED - Too few ",
-                "columns.\n";                    
             print_proper_format();
             return();
         }
@@ -2438,7 +2473,6 @@ Usage: perl $0 [--options] [INPUT_FILE]
 
 END
     print_proper_format();
-    exit 3;
 }
 
 sub initial_calculations {
@@ -2916,7 +2950,6 @@ sub overlapping_windows {
 
 sub parse_file {
     my ($INPUT_FILE, $function, $info) = @_;
-    my $check_input = 1 if ($info && $info eq "check input");
     my $main = 1 if ($info && $info eq "main"); 
     my ($curr_chr, $centro_start, $centro_stop, $gap, $thread_list);
     my (@results, @threads);
@@ -2965,6 +2998,17 @@ sub parse_file {
             }
             else {next}
         }
+		if ($line_array[POS] > $centro_start 
+			&& $line_array[POS] < $centro_stop) {
+			# Check for correct genome build
+			print "ERROR: The genome build does not match the input data!\n",
+				"Please indicate the correct UCSC genome build file\n",
+				"(e.g. --build=\"./genome_build/hg18_centromeres.txt\").\n\n";
+			print STDERR "ERROR: The genome build does not match the input ",
+				"data! Please indicate the correct UCSC genome build file",
+				"(e.g. --build=\"./genome_build/hg18_centromeres.txt\").\n";
+			exit 3;
+		}
 
         # Start new thread when centromere or new chromosome is encountered                
         if ($curr_chr != $line_array[CHR]
@@ -3003,10 +3047,6 @@ sub parse_file {
             @CURR_CHR_REFS = ();
         }
         push(@CURR_CHR_REFS, \@line_array); 
-        if ($check_input && $. == 1000) {
-            my $return = check_input_format(\@CURR_CHR_REFS);
-            return() unless $return;
-        }
     }
     close(INPUT_FILE);
     if (@CURR_CHR_REFS >= $SIZE_SMALL_WINDOW) {
