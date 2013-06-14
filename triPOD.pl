@@ -3086,13 +3086,12 @@ sub print_proper_format {
     print <<END;
     
 The input file must be tab delimited, sorted by chromosome and position, 
-  and in the following order: SNP Name, Chromosome, Position, 
-  Father GType, Father BAF, Father LRR, Mother GType, Mother BAF, Mother LRR, 
-  Child GType, Child BAF, Child LRR.
-The genotypes must be AA, AB, BB, NC or NoCall.
-B allele frequencies must be >= 0 and <= 1 for polymorphic markers.
+and in the following order: SNP Name, Chromosome, Position, 
+Father GType, Father BAF, Father LRR, Mother GType, Mother BAF, Mother LRR, 
+Child GType, Child BAF, Child LRR. 
+The genotypes must be AA, AB, BB, NC or NoCall. 
+B allele frequencies must be >= 0 and <= 1 for polymorphic markers. 
 A header line is expected but is not used to determine column identity.
-    
 END
 }    
 
