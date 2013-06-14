@@ -425,7 +425,7 @@ my $cleanup_script
     = "grep -v 'Wanted\\|Parameter' $PERL_LOG > $temp\nmv $temp $PERL_LOG";
 system($cleanup_script);
 my $successful = $completed[0] + $completed[1];
-print "Number of successful samples = $successful\n";
+print "Number of successful samples = $successful \n";
 print "Number of failed samples = ", scalar(@files) - $successful, "\n"
     if (scalar(@files) - $successful);
 print "Samples with no detectable abnormalities = $completed[1]\n"
